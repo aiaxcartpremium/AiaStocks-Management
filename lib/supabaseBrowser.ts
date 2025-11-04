@@ -1,4 +1,3 @@
-'use client'
 import { getSupabaseBrowserClient } from './supabaseClient'
 
 /**
@@ -7,3 +6,5 @@ import { getSupabaseBrowserClient } from './supabaseClient'
 export function sbBrowser() {
   return getSupabaseBrowserClient()
 }
+
+export default getSupabaseBrowserClient
