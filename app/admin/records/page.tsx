@@ -2,9 +2,8 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabaseClient'
-
+import { useEffect, useMemo, useState } from 'react'
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient'
 type Rec = { id:string; created_at:string; product_key:string; buyer_name:string|null; buyer_email:string|null; social_link:string|null; amount:number|null }
 
 export default function RecordsPage(){
