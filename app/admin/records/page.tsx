@@ -1,115 +1,60 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { sbBrowser } from '@/lib/supabaseBrowser'
-import { shortId } from '@/lib/catalog'
+import { supabase } from '@/lib/supabaseClient'
 
-export default function Records(){
-  const supabase = sbBrowser()
-  const [stockId,setStockId]=useState('')
-  const [buyer,setBuyer]=useState('')
-  const [buyerSocial,setBuyerSocial]=useState('')
-  const [channel,setChannel]=useState('tg')
-  const [months,setMonths]=useState(1)
-  const [price,setPrice]=useState<number>(0)
+type Rec = { id:string; created_at:string; product_key:string; buyer_name:string|null; buyer_email:string|null; social_link:string|null; amount:number|null }
 
-  const [myRows,setMyRows]=useState<any[]>([])
-  const [page,setPage]=useState(1); const pageSize=10
-  const [qChan,setQChan]=useState('all')
+export default function RecordsPage(){
+  const [rows,setRows]=useState<Rec[]>([])
+  const [page,setPage]=useState(1)
+  const [per,setPer]=useState(10)
+  const [q,setQ]=useState('')
+  const [product,setProduct]=useState('')
 
-  useEffect(()=>{
-    supabase.auth.getSession().then(async ({data})=>{
-      if(!data.session){ window.location.href='/login?next=/admin/records'; return }
-      const uid = data.session.user.id
-      const { data: recs } = await supabase
-        .from('sales')
-        .select('*')
-        .eq('created_by', uid)        /* privacy: only my records */
-        .order('created_at',{ascending:false})
-      setMyRows(recs||[])
-    })
-  },[])
+  useEffect(()=>{ load() }, [page, per, q, product])
 
-  async function record(){
-    if(!stockId) return alert('Enter stock id (uuid)')
-    const { error } = await supabase.rpc('record_sale_update_expiry', {
-      p_stock_id: stockId,
-      p_months: months,
-      p_buyer: buyer || null,
-      p_price: price || 0,
-      p_buyer_social: buyerSocial || null,
-      p_channel: channel || null
-    })
-    if(error) return alert(error.message)
-    alert('Recorded!')
-    window.location.reload()
+  async function load(){
+    const from = (page-1)*per
+    const to = from + per - 1
+    let query = supabase.from('account_records').select('*').order('created_at', { ascending:false }).range(from, to)
+    if(product) query = query.eq('product_key', product)
+    if(q) query = query.ilike('buyer_email', `%${q}%`)
+    const { data, error } = await query
+    if(error){ alert(error.message); return }
+    setRows(data as any)
   }
 
-  const filtered = myRows.filter(r => qChan==='all' || (r.channel||'')===qChan )
-  const lastPage = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const pageRows = filtered.slice((page-1)*pageSize, page*pageSize)
-
   return (
-    <main>
-      <header className="nav">
-        <a className="btn" href="/admin">Back to Admin</a>
-        <a className="btn" href="/">Home</a>
-      </header>
-
-      <div className="card">
-        <h1>Record Buyer</h1>
-        <div className="grid" style={{gridTemplateColumns:'1fr 1fr 1fr',gap:12}}>
-          <input className="input" placeholder="Stock ID (uuid)" value={stockId} onChange={e=>setStockId(e.target.value)} />
-          <input className="input" placeholder="Buyer (optional)" value={buyer} onChange={e=>setBuyer(e.target.value)} />
-          <input className="input" placeholder="Buyer social link (optional)" value={buyerSocial} onChange={e=>setBuyerSocial(e.target.value)} />
-          <select className="input" value={channel} onChange={e=>setChannel(e.target.value)}>
-            <option value="tg">Telegram</option>
-            <option value="fb">Facebook</option>
-            <option value="ig">Instagram</option>
-            <option value="tiktok">TikTok</option>
-            <option value="other">Other</option>
-          </select>
-          <input className="input" placeholder="Months" type="number" min={1} value={months} onChange={e=>setMonths(Number(e.target.value))}/>
-          <input className="input" placeholder="Price sold (₱)" type="number" min={0} value={price} onChange={e=>setPrice(Number(e.target.value))}/>
-        </div>
-        <div className="pills"><button className="btn primary" onClick={record}>Record sale</button></div>
-        <p className="small">Privacy: This page only shows records you created. Owners see all records in their panel.</p>
+    <main className="card">
+      <div className="pills"><a className="btn" href="/admin">← Back</a></div>
+      <h1 className="h1">Buyer Records</h1>
+      <div className="row">
+        <input className="input" placeholder="Search buyer email…" value={q} onChange={e=>setQ(e.target.value)} />
+        <input className="input" placeholder="Filter by product key…" value={product} onChange={e=>setProduct(e.target.value)} />
       </div>
 
-      <div className="card" style={{marginTop:12}}>
-        <div className="flex" style={{justifyContent:'space-between'}}>
-          <h3 style={{margin:0}}>My Recent Records</h3>
-          <select className="input" value={qChan} onChange={e=>{setPage(1);setQChan(e.target.value)}} style={{maxWidth:200}}>
-            <option value="all">All channels</option>
-            <option value="tg">Telegram</option>
-            <option value="fb">Facebook</option>
-            <option value="ig">Instagram</option>
-            <option value="tiktok">TikTok</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
+      <div style={{overflowX:'auto', marginTop:12}}>
         <table className="table">
-          <thead><tr><th>Date</th><th>Buyer</th><th>Social</th><th>Months</th><th>₱</th><th>Channel</th><th>Stock</th><th>New Expiry</th></tr></thead>
+          <thead><tr><th>Date</th><th>Product</th><th>Buyer</th><th>Email</th><th>Social</th><th>Amount</th></tr></thead>
           <tbody>
-            {pageRows.map(r=>(
+            {rows.map(r=>(
               <tr key={r.id}>
                 <td>{new Date(r.created_at).toLocaleString()}</td>
-                <td>{r.buyer||'-'}</td>
-                <td>{r.buyer_social||'-'}</td>
-                <td>{r.months||'-'}</td>
-                <td>{r.price_sold!=null? `₱${r.price_sold}`:'-'}</td>
-                <td>{r.channel||'-'}</td>
-                <td>{r.stock_id? shortId(r.stock_id): '-'}</td>
-                <td>{r.new_expiry||'-'}</td>
+                <td>{r.product_key}</td>
+                <td>{r.buyer_name ?? '-'}</td>
+                <td>{r.buyer_email ?? '-'}</td>
+                <td>{r.social_link ? <a href={r.social_link} target="_blank">{r.social_link}</a> : '-'}</td>
+                <td>{typeof r.amount==='number' ? `₱${r.amount.toFixed(2)}` : '-'}</td>
               </tr>
             ))}
-            {pageRows.length===0 && <tr><td colSpan={8}>No rows</td></tr>}
           </tbody>
         </table>
-        <div className="pills">
-          <button className="btn" onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page<=1}>Prev</button>
-          <span className="small">Page {page} / {lastPage}</span>
-          <button className="btn" onClick={()=>setPage(p=>Math.min(lastPage,p+1))} disabled={page>=lastPage}>Next</button>
-        </div>
+      </div>
+
+      <div className="pills" style={{marginTop:12}}>
+        <button className="btn" onClick={()=>setPage(p=>Math.max(1,p-1))}>Prev</button>
+        <span className="badge">Page {page}</span>
+        <button className="btn" onClick={()=>setPage(p=>p+1)}>Next</button>
       </div>
     </main>
   )

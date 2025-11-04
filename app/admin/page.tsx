@@ -1,65 +1,111 @@
 'use client'
-import { useEffect, useState } from 'react'
-import { sbBrowser } from '@/lib/supabaseBrowser'
-import { format } from 'date-fns'
-import { shortId } from '@/lib/catalog'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
-type Stock = { id:string, product_key:string, account_type:string, quantity:number, expires_at?:string|null }
+type Stock = { id:string; product_key:string; account_type:string|null; quantity:number|null; price:number|null; created_at:string }
+type RecordInsert = { buyer_name:string; buyer_email:string; social_link:string; amount:number; stock_id:string }
 
 export default function AdminPage(){
-  const supabase = sbBrowser()
+  const router = useRouter()
+  const [authed,setAuthed]=useState(false)
   const [rows,setRows]=useState<Stock[]>([])
-  const [loading,setLoading]=useState(true)
+  const [sel,setSel]=useState<string>('')
+  const [buyer,setBuyer]=useState('')
+  const [buyerEmail,setBuyerEmail]=useState('')
+  const [social,setSocial]=useState('')
+  const [amount,setAmount]=useState<number>(0)
 
   useEffect(()=>{
-    let cancelled=false
-    supabase.auth.getSession().then(async ({data})=>{
-      if(!data.session){ window.location.href='/login?next=/admin'; return }
-      const { data: stocks, error } = await supabase
-        .from('stocks')
-        .select('id,product_key,account_type,quantity,expires_at')
-        .order('created_at',{ascending:false})
-      if(error) alert(error.message)
-      if(!cancelled){ setRows(stocks||[]); setLoading(false) }
+    supabase.auth.getUser().then(async ({data})=>{
+      if(!data.user){ router.replace('/login?next=/admin'); return }
+      setAuthed(true)
+      await load()
     })
-    return ()=>{cancelled=true}
   },[])
 
-  async function getAccount(id:string){
-    const { error } = await supabase.rpc('admin_grant_and_decrement', { p_stock_id: id })
-    if(error) return alert(error.message)
-    alert('Granted one account. Quantity updated.')
-    window.location.reload()
+  async function load(){
+    const { data, error } = await supabase.from('stocks').select('id,product_key,account_type,quantity,price,created_at').order('created_at',{ascending:false})
+    if(error){ alert(error.message); return }
+    setRows((data||[]) as Stock[])
   }
 
-  async function logout(){ await supabase.auth.signOut(); window.location.href='/' }
+  async function getOne(){
+    if(!sel){ alert('Select a stock'); return }
+    const { data, error } = await supabase.rpc('admin_grant_and_decrement', { p_stock_id: sel })
+    if(error){ alert(error.message); return }
+    alert('Account granted. Details are now logged under your admin record.')
+    await load()
+  }
+
+  async function recordSale(e:React.FormEvent){
+    e.preventDefault()
+    if(!sel){ alert('Select a stock'); return }
+    const { error } = await supabase.from('account_records').insert({
+      stock_id: sel,
+      buyer_name: buyer || null,
+      buyer_email: buyerEmail || null,
+      social_link: social || null,
+      amount: amount || 0
+    })
+    if(error){ alert(error.message); return }
+    alert('Sale recorded.')
+    router.push('/admin/records')
+  }
+
+  async function logout(){ await supabase.auth.signOut(); router.replace('/') }
+
+  if(!authed) return <main className="card"><p className="p">Checking access…</p></main>
 
   return (
-    <main>
-      <header className="nav">
-        <a className="btn" href="/">Home</a>
-        <a className="btn" href="/admin/records">Record Sale</a>
-        <button className="btn primary" onClick={logout}>Logout / Switch</button>
-      </header>
-      <div className="card">
-        <h1>Admin Panel</h1>
-        {loading? <p>Loading…</p> : (
-          <table className="table">
-            <thead><tr><th>ID</th><th>Product</th><th>Type</th><th>Qty</th><th>Expires</th><th></th></tr></thead>
-            <tbody>
-              {rows.map(r=>(
-                <tr key={r.id}>
-                  <td>{shortId(r.id)}</td>
-                  <td>{r.product_key}</td>
-                  <td><span className="badge">{r.account_type}</span></td>
-                  <td>{r.quantity}</td>
-                  <td>{r.expires_at? format(new Date(r.expires_at),'yyyy-MM-dd'):'-'}</td>
-                  <td><button className="btn primary" onClick={()=>getAccount(r.id)}>Get Account</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+    <main className="card">
+      <div className="pills"><a className="btn" href="/">← Back</a><a className="btn" href="/admin/records">Buyer Records</a><button className="btn primary" onClick={logout}>Logout</button></div>
+      <h1 className="h1">Admin Panel</h1>
+      <p className="p">Select available stock, then either <b>Get Account</b> or <b>Record Sale</b>.</p>
+
+      <div className="grid">
+        <select className="input" value={sel} onChange={e=>setSel(e.target.value)}>
+          <option value="">Select stock…</option>
+          {rows.filter(r=>(r.quantity ?? 0) > 0).map(r=>(
+            <option key={r.id} value={r.id}>
+              {r.product_key} • {r.account_type ?? ''} • qty:{r.quantity} • ₱{r.price ?? 0}
+            </option>
+          ))}
+        </select>
+
+        <div className="pills">
+          <button className="btn primary" onClick={getOne}>Get Account</button>
+          <button className="btn" onClick={load}>Refresh</button>
+        </div>
+
+        <form onSubmit={recordSale} className="grid">
+          <div className="row">
+            <input className="input" placeholder="Buyer name" value={buyer} onChange={e=>setBuyer(e.target.value)} />
+            <input className="input" placeholder="Buyer email" value={buyerEmail} onChange={e=>setBuyerEmail(e.target.value)} />
+          </div>
+          <input className="input" placeholder="Buyer social link" value={social} onChange={e=>setSocial(e.target.value)} />
+          <input className="input" type="number" placeholder="Amount" value={amount} onChange={e=>setAmount(Number(e.target.value||0))} />
+          <div className="pills">
+            <button className="btn primary" type="submit">Record Sale</button>
+          </div>
+        </form>
+      </div>
+
+      <div style={{overflowX:'auto', marginTop:16}}>
+        <table className="table">
+          <thead><tr><th>Product</th><th>Type</th><th>Qty</th><th>Price</th><th>Added</th></tr></thead>
+          <tbody>
+            {rows.map(r=>(
+              <tr key={r.id}>
+                <td>{r.product_key}</td>
+                <td>{r.account_type ?? '-'}</td>
+                <td>{r.quantity ?? 0}</td>
+                <td>{r.price ?? '-'}</td>
+                <td>{new Date(r.created_at).toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </main>
   )

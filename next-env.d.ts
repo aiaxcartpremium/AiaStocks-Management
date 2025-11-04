@@ -1,1 +1,2 @@
-// Populated by Next.js during dev/build
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />

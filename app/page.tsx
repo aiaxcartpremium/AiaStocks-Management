@@ -1,18 +1,12 @@
-export default function Home(){
+export default function Home() {
   return (
-    <main>
-      <header className="nav">
-        <a className="btn" href="/">Home</a>
-        <a className="btn primary" href="/login">Login</a>
-      </header>
-      <div className="card">
-        <h1>Aiaxcart Premium Shop</h1>
-        <p>Welcome! Choose a portal to continue.</p>
-        <div className="pills">
-          <a className="btn primary" href="/admin">Admin</a>
-          <a className="btn" href="/owner">Owner</a>
-        </div>
-        <p className="small">© 2025 Aiaxcart</p>
+    <main className="card">
+      <div className="kicker">Welcome</div>
+      <h1 className="h1">Choose a portal</h1>
+      <p className="p">Please select a portal below to continue. You must be logged in to access either panel.</p>
+      <div className="pills">
+        <a className="btn primary" href="/admin">Admin</a>
+        <a className="btn" href="/owner">Owner</a>
       </div>
     </main>
   )

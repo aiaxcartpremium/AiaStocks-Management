@@ -1,0 +1,32 @@
+:root{
+  --pink-0:#FFE5EC; /* lavender blush */
+  --pink-1:#FFB3C6; /* pastel pink */
+  --pink-2:#FF8FAB; /* light pink */
+  --pink-3:#FFC2D1; /* pink champagne */
+  --ink:#1f0f18;
+  --bg:#fff7fb;
+  --card:#ffffff;
+  --muted:#6d5b66;
+  --ring:#ff8fab33;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial}
+a{color:inherit;text-decoration:none}
+.container{max-width:1000px;margin:0 auto;padding:20px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
+.brand{font-weight:900;font-size:22px}
+.pills{display:flex;gap:10px;flex-wrap:wrap}
+.btn{border:1px solid var(--pink-3);background:#fff;padding:10px 14px;border-radius:14px;cursor:pointer}
+.btn:hover{box-shadow:0 0 0 3px var(--ring)}
+.btn.primary{background:var(--pink-2);border-color:var(--pink-2);color:#fff;font-weight:700}
+.card{background:linear-gradient(180deg,var(--pink-0),#fff);border:1px solid var(--pink-3);border-radius:18px;box-shadow:0 8px 22px rgba(161,99,124,.18);padding:22px}
+.h1{margin:0 0 4px;font-size:34px;font-weight:800;letter-spacing:.3px}
+.kicker{font-size:12px;letter-spacing:.25em;text-transform:uppercase;color:var(--muted)}
+.p{color:var(--muted);margin:0 0 14px}
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.input, select, textarea{width:100%;padding:10px 12px;border:1px solid var(--pink-3);border-radius:12px;background:#fff}
+.table{width:100%;border-collapse:collapse}
+.table th,.table td{padding:8px 10px;border-bottom:1px dashed var(--pink-3);font-size:14px;text-align:left}
+.badge{background:var(--pink-0);border:1px solid var(--pink-3);padding:4px 8px;border-radius:999px}
+.footer{opacity:.7;margin-top:26px;font-size:13px}

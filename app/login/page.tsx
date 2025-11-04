@@ -1,58 +1,53 @@
 'use client'
-import { useState } from 'react'
-import { sbBrowser } from '@/lib/supabaseBrowser'
-import { useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function LoginPage(){
-  const supabase = sbBrowser()
-  const q = useSearchParams()
-  const next = q.get('next') || '/'
-  const [email,setEmail] = useState('')
-  const [password,setPassword] = useState('')
-  const [loading,setLoading] = useState(false)
+  const router = useRouter()
+  const params = useSearchParams()
+  const next = params.get('next') ?? '/'
 
-  async function doLogin(e:React.FormEvent){
+  const [email,setEmail]=useState('')
+  const [password,setPassword]=useState('')
+  const [msg,setMsg]=useState<string|null>(null)
+
+  useEffect(()=>{
+    // support /login?logout=1
+    if(params.get('logout')){
+      supabase.auth.signOut().finally(()=>router.replace('/'))
+    }
+  },[])
+
+  async function signIn(e:React.FormEvent){
     e.preventDefault()
-    setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    setLoading(false)
-    if(error) alert(error.message)
-    else window.location.href = next
+    if(error){ setMsg(error.message); return }
+    router.replace(next)
   }
 
-  function fill(role:'admin'|'owner'){
-    if(role==='admin'){
-      setEmail(process.env.NEXT_PUBLIC_LOGIN_ADMIN_EMAIL || '')
-      setPassword(process.env.NEXT_PUBLIC_LOGIN_ADMIN_PASSWORD || '')
-    }else{
-      setEmail(process.env.NEXT_PUBLIC_LOGIN_OWNER_EMAIL || '')
-      setPassword(process.env.NEXT_PUBLIC_LOGIN_OWNER_PASSWORD || '')
-    }
+  function preset(kind:'admin'|'owner'){
+    setEmail(kind==='admin' ? process.env.NEXT_PUBLIC_LOGIN_ADMIN_EMAIL! : process.env.NEXT_PUBLIC_LOGIN_OWNER_EMAIL!)
+    setPassword(kind==='admin' ? process.env.NEXT_PUBLIC_LOGIN_ADMIN_PASSWORD! : process.env.NEXT_PUBLIC_LOGIN_OWNER_PASSWORD!)
   }
 
   return (
-    <main>
-      <header className="nav">
-        <a className="btn" href="/">Home</a>
-      </header>
-      <div className="card">
-        <h1>Login</h1>
-        <div className="pills">
-          <button className="btn" onClick={()=>fill('admin')}>Fill Admin</button>
-          <button className="btn" onClick={()=>fill('owner')}>Fill Owner</button>
-        </div>
-        <form className="grid" onSubmit={doLogin}>
-          <div>
-            <label>Email</label>
-            <input className="input" value={email} onChange={e=>setEmail(e.target.value)} />
-          </div>
-          <div>
-            <label>Password</label>
-            <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-          </div>
-          <button className="btn primary" disabled={loading}>{loading?'Signing in…':'Login'}</button>
-        </form>
+    <main className="card">
+      <h1 className="h1">Login</h1>
+      <p className="p">Tap a preset or enter credentials.</p>
+      {msg && <p className="p"><span className="badge">{msg}</span></p>}
+      <div className="pills">
+        <button className="btn primary" onClick={()=>preset('admin')}>Use Admin</button>
+        <button className="btn" onClick={()=>preset('owner')}>Use Owner</button>
       </div>
+      <form onSubmit={signIn} className="grid" style={{marginTop:12}}>
+        <input className="input" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} />
+        <input className="input" type="password" placeholder="Password" value={password} onChange={e=>setPassword(e.target.value)} />
+        <div className="pills">
+          <button className="btn primary" type="submit">Login</button>
+          <a className="btn" href="/">Back</a>
+        </div>
+      </form>
     </main>
   )
 }

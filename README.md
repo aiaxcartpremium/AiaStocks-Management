@@ -1,14 +1,25 @@
-# Aiaxcart Premium v6
-Pastel pink UI • Owner/Admin • Stocks • Buyer Records • Pagination • Pretty IDs
+# Aiaxcart Premium Shop (Next.js 14 + Supabase)
 
-## 1) Env Vars
-Copy `.env.example` -> `.env.local` (or set in Vercel).
+Pastel‑pink, simple, and **ready to deploy**.
 
-## 2) Supabase
-Run `supabase_setup.sql` in SQL Editor.
+## What’s inside
+- `/` Welcome (only buttons to Admin / Owner — no guest access shown in nav)
+- `/login` Preset buttons (Admin/Owner) + manual email/password
+- `/owner` Add stocks (product dropdown, account type, term, optional creds, qty, price)
+- `/admin` Pick a stock → Get Account (decrement) or Record Sale (buyer name/email/social/amount)
+- `/admin/records` Buyer records with pagination filters (search email / filter by product)
 
-## 3) Dev
+## 1) Supabase
+Paste **supabase.sql** in SQL Editor → RUN.
+
+## 2) Environment
+`.env.local` is included with your values (you can also add these in Vercel project settings).
+
+## 3) Install & run
 ```bash
 npm i
 npm run dev
 ```
+or deploy to Vercel and set the same env vars.
+
+Tip: Turn on RLS + policies later when you’re ready.
