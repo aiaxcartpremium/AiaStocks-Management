@@ -1,5 +1,7 @@
 import '@/styles/globals.css'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata = {
   title: 'Aiaxcart Premium Shop',
   description: 'Stocks • Records • Admin • Owner'
