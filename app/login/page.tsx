@@ -2,14 +2,15 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient'
 
 export default function LoginPage(){
   const router = useRouter()
   const params = useSearchParams()
   const next = params.get('next') ?? '/'
+  const supabase = useMemo(() => getSupabaseBrowserClient(), [])
 
   const [email,setEmail]=useState('')
   const [password,setPassword]=useState('')
