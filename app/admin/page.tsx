@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient'
 
 type Stock = { id:string; product_key:string; account_type:string|null; quantity:number|null; price:number|null; created_at:string }
 type RecordInsert = { buyer_name:string; buyer_email:string; social_link:string; amount:number; stock_id:string }
