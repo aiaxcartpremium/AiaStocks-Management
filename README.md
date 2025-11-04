@@ -12,6 +12,8 @@ Pastel‑pink, simple, and **ready to deploy**.
 ## 1) Supabase
 Paste **supabase.sql** in SQL Editor → RUN.
 
+> **Heads up:** If your hosted project already exists, run the script again whenever the app complains about missing columns (e.g. `stocks.quantity`). The SQL file is idempotent and will safely add any new fields, triggers, or RPCs the UI expects.
+
 ## 2) Environment
 `.env.local` is included with your values (you can also add these in Vercel project settings).
 
