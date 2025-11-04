@@ -1,3 +1,4 @@
+'use client'
 import { getSupabaseBrowserClient } from './supabaseClient'
 
 /**
