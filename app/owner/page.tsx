@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabaseClient'
+import { getSupabaseBrowserClient } from '@/lib/supabaseClient'
 import { PRODUCT_KEYS, ACCOUNT_TYPES, TERM_OPTIONS } from '@/lib/catalog'
 
 type StockInsert = {
@@ -22,6 +22,7 @@ type StockInsert = {
 
 export default function OwnerPage(){
   const router = useRouter()
+  const supabase = useMemo(() => getSupabaseBrowserClient(), [])
   const [authed,setAuthed]=useState(false)
   const [form,setForm]=useState<StockInsert>({
     product_key: 'netflix',
